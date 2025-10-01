@@ -37,20 +37,13 @@ export function VideoRecordingPage({
     setError(null)
     console.log("startRecording ")
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const camera = devices.find(d => d.kind === "videoinput");
-      console.log("devices", devices)
-      console.log("camera", camera)
-
-      if (!camera) {
-        setError("No camera found. Please connect a camera and try again.");
-        return;
-      }
-
+      // Request camera and microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: camera.deviceId } }, // explicitly request your camera
+        video: true,
         audio: true
       });
+
+      console.log("Got media stream:", stream)
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
