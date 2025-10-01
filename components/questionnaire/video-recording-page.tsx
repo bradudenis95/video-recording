@@ -36,10 +36,16 @@ export function VideoRecordingPage({
       const camera = devices.find(d => d.kind === "videoinput");
       console.log("devices", devices)
       console.log("camera", camera)
+
+      if (!camera) {
+        alert("No camera found");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      })
+        video: { deviceId: { exact: camera.deviceId } }, // explicitly request your camera
+        audio: true
+      });
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
