@@ -236,7 +236,13 @@ export function VideoRecordingPage({
     setError(null)
     
     try {
-      const fileName = `videos/${sessionId || 'anonymous'}_${Date.now()}.webm`
+      const fileExt = "mp4";
+      const timestamp = Date.now()
+
+      const fileName = sessionId
+        ? `${sessionId}-video-${timestamp}.${fileExt}`
+        : `video-${timestamp}-${Math.random().toString(36).substring(2)}.${fileExt}`
+
       const { data, error } = await supabase.storage
         .from(CANDIDATE_VIDEO_BUCKET_NAME)
         .upload(fileName, videoFile)
