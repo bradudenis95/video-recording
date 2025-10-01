@@ -29,6 +29,7 @@ export interface QuestionnaireData {
   locationLng?: number
   positionId?: number
   headshot: string | null
+  videoUrl?: string | null
   // Page 2
   bio: string
   selectedSkills: string[]
@@ -67,6 +68,7 @@ const initialData: QuestionnaireData = {
   locationLng: undefined,
   positionId: undefined,
   headshot: null,
+  videoUrl: null,
   bio: "",
   selectedSkills: [],
   resume: null,
