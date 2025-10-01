@@ -6,6 +6,8 @@ import { useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { QuestionnaireData } from "../questionnaire-form"
 import { CANDIDATE_VIDEO_BUCKET_NAME } from "@/lib/constant"
+import { ChevronLeft } from "lucide-react"
+import { Button } from "../ui/button"
 
 interface VideoRecordingPageProps {
   data: QuestionnaireData
@@ -295,13 +297,13 @@ export function VideoRecordingPage({
                 <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                 <span className="text-red-700 font-medium">Recording...</span>
                 <span className="text-red-600 text-sm">
-                  {recordingTime}s / 40s max
+                  {recordingTime}s / 30s max
                 </span>
               </div>
               <div className="mt-2 w-full bg-red-200 rounded-full h-2">
                 <div 
                   className="bg-red-500 h-2 rounded-full transition-all duration-1000" 
-                  style={{ width: `${(recordingTime / 40) * 100}%` }}
+                  style={{ width: `${(recordingTime / 30) * 100}%` }}
                 ></div>
               </div>
             </div>
@@ -320,38 +322,39 @@ export function VideoRecordingPage({
 
           {/* Control Buttons */}
           <div className="flex gap-3 mb-4">
-            {!recording || videoURL && (
-              <button 
+            {!recording && !videoURL && (
+              <Button
+                variant="outline"
                 onClick={startRecording}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2"
               >
                 Start Recording
-              </button>
+              </Button>
             )}
             {recording && (
-              <button 
+              <Button 
                 onClick={stopRecording}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="px-4 py-2 bg-red-600"
               >
                 Stop Recording
-              </button>
+              </Button>
             )}
             
             {videoURL && !recording && (
               <>
-                <button 
+                <Button 
                   onClick={rerecord}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  className="px-4 py-2 bg-orange-600"
                 >
                   Rerecord
-                </button>
-                <button 
+                </Button>
+                <Button 
                   onClick={uploadVideo}
                   disabled={uploading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2"
                 >
                   {uploading ? 'Uploading...' : 'Upload Video'}
-                </button>
+                </Button>
               </>
             )}
           </div>
