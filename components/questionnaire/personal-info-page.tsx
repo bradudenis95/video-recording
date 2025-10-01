@@ -16,6 +16,7 @@ import { LocationAutocomplete } from "@/components/ui/location-autocomplete"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { createClient } from "@/lib/supabase/client"
 import type { QuestionnaireData } from "../questionnaire-form"
+import { CANDIDATE_HEADSHOTS_BUCKET_NAME } from "@/lib/constant"
 
 interface PersonalInfoPageProps {
   data: QuestionnaireData
@@ -139,7 +140,7 @@ export function PersonalInfoPage({
             label=""
             value={data.headshot || undefined}
             onChange={(url) => onUpdate({ headshot: url })}
-            bucketName="candidate-headshots"
+            bucketName={CANDIDATE_HEADSHOTS_BUCKET_NAME}
             maxSizeMB={5}
             description="Upload specs: max 5MB, JPG/PNG"
             sessionId={sessionId} // Pass sessionId for better file naming

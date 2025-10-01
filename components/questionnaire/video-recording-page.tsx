@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { QuestionnaireData } from "../questionnaire-form"
+import { CANDIDATE_VIDEO_BUCKET_NAME } from "@/lib/constant"
 
 interface VideoRecordingPageProps {
   data: QuestionnaireData
@@ -44,9 +45,6 @@ export function VideoRecordingPage({
     }
     
     try {
-      console.log("Requesting camera access...")
-      console.log("Available media devices:", await navigator.mediaDevices.enumerateDevices())
-      
       // Try with more specific constraints
       const constraints = {
         video: {
@@ -57,15 +55,8 @@ export function VideoRecordingPage({
         audio: true
       }
       
-      console.log("Using constraints:", constraints)
-      
       // Request camera and microphone access
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      console.log("Got media stream:", stream)
-      console.log("Stream tracks:", stream.getTracks())
-      console.log("Video tracks:", stream.getVideoTracks())
-      console.log("Audio tracks:", stream.getAudioTracks())
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
@@ -245,7 +236,7 @@ export function VideoRecordingPage({
     try {
       const fileName = `videos/${sessionId || 'anonymous'}_${Date.now()}.webm`
       const { data, error } = await supabase.storage
-        .from("videos")
+        .from(CANDIDATE_VIDEO_BUCKET_NAME)
         .upload(fileName, videoFile)
 
       if (error) {
@@ -254,10 +245,10 @@ export function VideoRecordingPage({
       } else {
         const {
           data: { publicUrl },
-        } = supabase.storage.from("videos").getPublicUrl(fileName)
+        } = supabase.storage.from(CANDIDATE_VIDEO_BUCKET_NAME).getPublicUrl(fileName)
         
         // Update the questionnaire data with the video URL
-        onUpdate({ videoUrl: publicUrl })
+        onUpdate({ video_url: publicUrl })
         
         setError(null)
         // You could show a success message here instead of alert
@@ -280,10 +271,10 @@ export function VideoRecordingPage({
 
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-sm font-medium">Intro Video</span>
-            <span className="text-green-600 text-xs italic">
+            <span className="text-sm font-medium">Recording a quick intro video helps you stand out from the crowd! Just say hello and tell us why you love working in the industry. 30 seconds max.</span>
+            {/* <span className="text-green-600 text-xs italic">
               Optional but highly recommended!
-            </span>
+            </span> */}
           </div>
           
           {/* Error Display */}
@@ -329,14 +320,15 @@ export function VideoRecordingPage({
 
           {/* Control Buttons */}
           <div className="flex gap-3 mb-4">
-            {!recording ? (
+            {!recording || videoURL && (
               <button 
                 onClick={startRecording}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                {videoURL ? 'Record New Video' : 'Start Recording'}
+                Start Recording
               </button>
-            ) : (
+            )}
+            {recording && (
               <button 
                 onClick={stopRecording}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
