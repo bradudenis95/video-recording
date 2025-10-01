@@ -32,6 +32,10 @@ export function VideoRecordingPage({
   const startRecording = async () => {
     console.log("startRecording ")
     try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const camera = devices.find(d => d.kind === "videoinput");
+      console.log("devices", devices)
+      console.log("camera", camera)
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
