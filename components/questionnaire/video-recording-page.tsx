@@ -45,15 +45,27 @@ export function VideoRecordingPage({
     
     try {
       console.log("Requesting camera access...")
+      console.log("Available media devices:", await navigator.mediaDevices.enumerateDevices())
+      
+      // Try with more specific constraints
+      const constraints = {
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        },
+        audio: true
+      }
+      
+      console.log("Using constraints:", constraints)
       
       // Request camera and microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       console.log("Got media stream:", stream)
       console.log("Stream tracks:", stream.getTracks())
+      console.log("Video tracks:", stream.getVideoTracks())
+      console.log("Audio tracks:", stream.getAudioTracks())
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
@@ -102,6 +114,70 @@ export function VideoRecordingPage({
       }, 40000)
     } catch (error) {
       console.error("Error starting recording:", error)
+      
+      // Try fallback with minimal constraints
+      if (error instanceof Error && error.name === 'NotFoundError') {
+        console.log("Trying fallback with minimal constraints...")
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480 },
+            audio: false
+          });
+          
+          console.log("Fallback successful, got stream:", fallbackStream)
+          
+          if (videoRef.current) {
+            videoRef.current.srcObject = fallbackStream
+            videoRef.current.play()
+          }
+
+          const mediaRecorder = new MediaRecorder(fallbackStream)
+          mediaRecorderRef.current = mediaRecorder
+          const chunks: Blob[] = []
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunks.push(e.data)
+          }
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: "video/webm" })
+            setVideoFile(blob)
+            setVideoURL(URL.createObjectURL(blob))
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current)
+            }
+            if (timerRef.current) {
+              clearInterval(timerRef.current)
+            }
+            setRecordingTime(0)
+          }
+
+          mediaRecorder.start()
+          setRecording(true)
+          setRecordingTime(0)
+
+          // Start timer for recording duration
+          timerRef.current = setInterval(() => {
+            setRecordingTime(prev => {
+              const newTime = prev + 1
+              if (newTime >= 40) {
+                stopRecording()
+              }
+              return newTime
+            })
+          }, 1000)
+
+          // Auto-stop after 40 seconds (backup)
+          timeoutRef.current = setTimeout(() => {
+            stopRecording()
+          }, 40000)
+          
+          return; // Success with fallback
+        } catch (fallbackError) {
+          console.error("Fallback also failed:", fallbackError)
+        }
+      }
+      
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
           setError("Camera access denied. Please allow camera permissions and try again.")
