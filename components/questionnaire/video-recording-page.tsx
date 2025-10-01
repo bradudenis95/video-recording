@@ -36,7 +36,16 @@ export function VideoRecordingPage({
   const startRecording = async () => {
     setError(null)
     console.log("startRecording ")
+    
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError("Camera access is not supported in this browser.")
+      return
+    }
+    
     try {
+      console.log("Requesting camera access...")
+      
       // Request camera and microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -44,6 +53,7 @@ export function VideoRecordingPage({
       });
 
       console.log("Got media stream:", stream)
+      console.log("Stream tracks:", stream.getTracks())
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
@@ -96,9 +106,11 @@ export function VideoRecordingPage({
         if (error.name === 'NotAllowedError') {
           setError("Camera access denied. Please allow camera permissions and try again.")
         } else if (error.name === 'NotFoundError') {
-          setError("No camera found. Please connect a camera and try again.")
+          setError("No camera detected. Please check that your camera is connected and not being used by another application.")
         } else if (error.name === 'NotReadableError') {
           setError("Camera is already in use by another application. Please close other applications and try again.")
+        } else if (error.name === 'OverconstrainedError') {
+          setError("Camera constraints cannot be satisfied. Please try a different camera or check camera settings.")
         } else {
           setError(`Failed to start recording: ${error.message}`)
         }
