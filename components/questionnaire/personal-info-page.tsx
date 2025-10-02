@@ -16,7 +16,7 @@ import { LocationAutocomplete } from "@/components/ui/location-autocomplete"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { createClient } from "@/lib/supabase/client"
 import type { QuestionnaireData } from "../questionnaire-form"
-import { CANDIDATE_HEADSHOTS_BUCKET_NAME } from "@/lib/constant"
+import { CANDIDATE_HEADSHOTS_BUCKET_NAME } from "@/lib/constants"
 
 interface PersonalInfoPageProps {
   data: QuestionnaireData
