@@ -78,7 +78,7 @@ export function LocationAutocomplete({
       setIsLoading(true)
       try {
         console.log("[v0] Searching locations for:", value)
-        const response = await fetch(`/api/autocomplete-location?input=${encodeURIComponent(value)}`)
+        const response = await fetch(`https://v0-questionnaire-form-with-database-git-app-eccreedons-projects.vercel.app/api/autocomplete-location?input=${encodeURIComponent(value)}`)
         const data = await response.json()
 
         if (response.ok && data.predictions) {
