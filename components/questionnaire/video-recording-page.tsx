@@ -14,6 +14,7 @@ interface VideoRecordingPageProps {
   onUpdate: (updates: Partial<QuestionnaireData>) => void
   showErrors?: boolean
   sessionId?: string // Added sessionId prop for better file naming
+  onNextPage: () => void
 }
 
 export function VideoRecordingPage({
@@ -21,6 +22,7 @@ export function VideoRecordingPage({
   onUpdate,
   showErrors = false,
   sessionId,
+  onNextPage,
 }: VideoRecordingPageProps) {
   const supabase = createClient()
 
@@ -63,7 +65,8 @@ export function VideoRecordingPage({
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream
-          videoRef.current.play()
+          // Don't auto-play to avoid full-screen camera view
+          // videoRef.current.play()
         }
 
         setPreviewStream(stream)
@@ -131,7 +134,8 @@ export function VideoRecordingPage({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.play()
+        // Don't auto-play to avoid full-screen camera view
+        // videoRef.current.play()
       }
 
       setPreviewStream(stream)
@@ -190,25 +194,50 @@ export function VideoRecordingPage({
         audio: true,
       })
 
-      // Combine video from preview with audio for recording
-      const combinedStream = new MediaStream([
+      // Create separate streams for video element and recording
+      // Video element should only show video (no audio)
+      const videoOnlyStream = new MediaStream([
+        ...previewStream!.getVideoTracks(),
+      ])
+
+      // Recording stream includes both video and audio
+      const recordingStream = new MediaStream([
         ...previewStream!.getVideoTracks(),
         ...audioStream.getAudioTracks(),
       ])
 
-      // Video element already has the preview stream, no need to change it
-      const mediaRecorder = new MediaRecorder(combinedStream)
+      // Update video element to show only video (no audio)
+      if (videoRef.current) {
+        videoRef.current.srcObject = videoOnlyStream
+        videoRef.current.muted = true // Ensure no audio plays
+      }
+      // Check for supported MIME types (mobile compatibility)
+      let mimeType = "video/webm"
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = "video/mp4"
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = "video/webm;codecs=vp8"
+        }
+      }
+      console.log("Using MIME type:", mimeType)
+
+      const mediaRecorder = new MediaRecorder(recordingStream, { mimeType })
       mediaRecorderRef.current = mediaRecorder
       const chunks: Blob[] = []
 
       mediaRecorder.ondataavailable = (e) => {
+        console.log("MediaRecorder data available:", e.data.size, "bytes")
         if (e.data.size > 0) chunks.push(e.data)
       }
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "video/webm" })
+        console.log("MediaRecorder stopped, chunks:", chunks.length)
+        const blob = new Blob(chunks, { type: mimeType })
+        console.log("Created blob:", blob.size, "bytes")
+        const videoUrl = URL.createObjectURL(blob)
+        console.log("Created video URL:", videoUrl)
         setVideoFile(blob)
-        setVideoURL(URL.createObjectURL(blob))
+        setVideoURL(videoUrl)
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current)
         }
@@ -219,6 +248,9 @@ export function VideoRecordingPage({
       }
 
       mediaRecorder.start()
+      console.log("MediaRecorder started with stream:", recordingStream)
+      console.log("Video tracks:", recordingStream.getVideoTracks().length)
+      console.log("Audio tracks:", recordingStream.getAudioTracks().length)
       setRecording(true)
       setRecordingTime(0)
 
@@ -334,10 +366,20 @@ export function VideoRecordingPage({
     if (!mediaRecorderRef.current) return
 
     mediaRecorderRef.current.stop()
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream
-      stream.getTracks().forEach((track) => track.stop())
+
+    // Stop the audio tracks from the recording stream
+    if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+      mediaRecorderRef.current.stream
+        .getAudioTracks()
+        .forEach((track) => track.stop())
     }
+
+    // Restore the original preview stream to the video element
+    if (videoRef.current && previewStream) {
+      videoRef.current.srcObject = previewStream
+      videoRef.current.muted = true // Keep muted to prevent any audio feedback
+    }
+
     setRecording(false)
 
     // Clear timers
@@ -364,7 +406,7 @@ export function VideoRecordingPage({
       stopRecording()
     }
 
-    // Start new recording
+    // Start new recording (camera preview should still be active)
     startRecording()
   }
 
@@ -401,10 +443,9 @@ export function VideoRecordingPage({
 
         // Update the questionnaire data with the video URL
         onUpdate({ video_url: publicUrl })
+        onNextPage()
 
         setError(null)
-        // You could show a success message here instead of alert
-        alert("Video uploaded successfully!")
       }
     } catch (error) {
       console.error("Upload error:", error)
@@ -431,6 +472,17 @@ export function VideoRecordingPage({
             {/* <span className="text-green-600 text-xs italic">
               Optional but highly recommended!
             </span> */}
+          </div>
+          <div className="flex gap-3 mb-4">
+            {!recording && !videoURL && cameraActive && (
+              <Button
+                variant="outline"
+                onClick={startRecording}
+                className="px-4 py-2"
+              >
+                Start Recording
+              </Button>
+            )}
           </div>
 
           {/* Error Display */}
@@ -472,6 +524,8 @@ export function VideoRecordingPage({
               className="border border-gray-300 rounded-lg"
               style={{ backgroundColor: "#f3f4f6" }}
               muted
+              playsInline
+              autoPlay
             />
 
             {/* Loading overlay when camera is starting */}
@@ -516,15 +570,6 @@ export function VideoRecordingPage({
 
           {/* Control Buttons */}
           <div className="flex gap-3 mb-4">
-            {!recording && !videoURL && cameraActive && (
-              <Button
-                variant="outline"
-                onClick={startRecording}
-                className="px-4 py-2"
-              >
-                Start Recording
-              </Button>
-            )}
             {error && !cameraActive && (
               <Button
                 variant="outline"
@@ -567,7 +612,15 @@ export function VideoRecordingPage({
                 width="400"
                 height="300"
                 controls
+                playsInline
+                preload="metadata"
                 className="border border-gray-300 rounded-lg"
+                onError={(e) => {
+                  console.error("Video playback error:", e)
+                  console.error("Video src:", videoURL)
+                }}
+                onLoadStart={() => console.log("Video loading started")}
+                onCanPlay={() => console.log("Video can play")}
               />
             </div>
           )}

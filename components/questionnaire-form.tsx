@@ -116,6 +116,10 @@ export function QuestionnaireForm() {
   const totalPages = 5
   const progress = (currentPage / totalPages) * 100
 
+  const goToNextPage = () => {
+    setCurrentPage(currentPage + 1)
+  }
+
   const handleSubmit = async () => {
     setShowErrors(true)
 
@@ -143,6 +147,7 @@ export function QuestionnaireForm() {
         resume_url: data.resume,
         bio: data.bio,
         session_id: sessionId,
+        video_url: data.video_url,
       }
 
       data.selectedSkills.forEach((skill, index) => {
@@ -301,6 +306,7 @@ export function QuestionnaireForm() {
           <VideoRecordingPage
             data={data}
             onUpdate={(updates) => setData({ ...data, ...updates })}
+            onNextPage={goToNextPage}
           />
         )
       case 3:
@@ -351,8 +357,10 @@ export function QuestionnaireForm() {
           data.positionId
         )
       case 2:
-        return data.bio && data.selectedSkills.length > 0
+        return data.video_url
       case 3:
+        return data.bio && data.selectedSkills.length > 0
+      case 4:
         const firstExp = data.experiences[0]
         return (
           firstExp.role &&
@@ -360,7 +368,7 @@ export function QuestionnaireForm() {
           firstExp.startMonth &&
           firstExp.startYear
         )
-      case 4:
+      case 5:
         return (
           Object.values(data.shiftAvailability).some(Boolean) &&
           data.interviewSlots.length > 0
