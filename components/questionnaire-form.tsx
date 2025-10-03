@@ -348,12 +348,12 @@ export function QuestionnaireForm() {
           data.lastName &&
           phoneValid &&
           emailValid &&
-          data.locationRoute &&
-          data.locationLocality &&
-          data.locationState &&
-          data.locationPlaceId &&
-          data.locationLat &&
-          data.locationLng &&
+          // data.locationRoute &&
+          // data.locationLocality &&
+          // data.locationState &&
+          // data.locationPlaceId &&
+          // data.locationLat &&
+          // data.locationLng &&
           data.positionId
         )
       case 2:
