@@ -54,9 +54,11 @@ export function VideoRecordingPage({
         // Request camera access for preview
         const constraints = {
           video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
             facingMode: "user",
+            // Allow mobile devices to use their natural orientation
+            aspectRatio: { ideal: 16/9 }
           },
           audio: false, // No audio needed for preview
         }
@@ -123,9 +125,11 @@ export function VideoRecordingPage({
       // Request camera access for preview
       const constraints = {
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
           facingMode: "user",
+          // Allow mobile devices to use their natural orientation
+          aspectRatio: { ideal: 16/9 }
         },
         audio: false, // No audio needed for preview
       }
@@ -519,10 +523,12 @@ export function VideoRecordingPage({
           <div className="mb-4 relative">
             <video
               ref={videoRef}
-              width="400"
-              height="300"
-              className="border border-gray-300 rounded-lg"
-              style={{ backgroundColor: "#f3f4f6" }}
+              className="w-full max-w-md mx-auto border border-gray-300 rounded-lg"
+              style={{ 
+                backgroundColor: "#f3f4f6",
+                aspectRatio: "16/9", // Default aspect ratio for preview
+                objectFit: "cover"
+              }}
               muted
               playsInline
               autoPlay
@@ -607,21 +613,30 @@ export function VideoRecordingPage({
               <h4 className="text-sm font-medium text-gray-700 mb-3">
                 Your Recording:
               </h4>
-              <video
-                src={videoURL}
-                width="400"
-                height="300"
-                controls
-                playsInline
-                preload="metadata"
-                className="border border-gray-300 rounded-lg"
-                onError={(e) => {
-                  console.error("Video playback error:", e)
-                  console.error("Video src:", videoURL)
-                }}
-                onLoadStart={() => console.log("Video loading started")}
-                onCanPlay={() => console.log("Video can play")}
-              />
+              <div className="relative">
+                <video
+                  src={videoURL}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full max-w-md mx-auto border border-gray-300 rounded-lg"
+                  style={{
+                    maxHeight: "60vh", // Limit height on mobile
+                    objectFit: "contain" // Maintain aspect ratio without cropping
+                  }}
+                  onError={(e) => {
+                    console.error("Video playback error:", e)
+                    console.error("Video src:", videoURL)
+                  }}
+                  onLoadStart={() => console.log("Video loading started")}
+                  onCanPlay={() => console.log("Video can play")}
+                  onLoadedMetadata={(e) => {
+                    const video = e.target as HTMLVideoElement
+                    console.log("Video dimensions:", video.videoWidth, "x", video.videoHeight)
+                    // The video will automatically size itself based on its natural dimensions
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
